@@ -3,19 +3,26 @@ import { useState, useEffect } from "react";
 
 let socket;
 
+type User = {
+  name: string,
+  color: string
+}
+
 type Message = {
-  author: string;
+  author: User;
   message: string;
 };
 
 export default function Home() {
   const [username, setUsername] = useState("");
-  const [chosenUsername, setChosenUsername] = useState("");
+  const [color, setColor] = useState("");
+  const [user, setUser] = useState<User>();
   const [message, setMessage] = useState("");
   const [messages, setMessages] = useState<Array<Message>>([]);
 
   useEffect(() => {
     socketInitializer();
+    colorIntializer();
   }, []);
 
   const socketInitializer = async () => {
@@ -33,11 +40,18 @@ export default function Home() {
     });
   };
 
+  const colorIntializer= async () => {
+    const response = await fetch('/api/user-color');
+    console.log(JSON.stringify(response))
+    const data = await response.json();
+    setColor(data.color);
+}
+  
   const sendMessage = async () => {
-    socket.emit("createdMessage", { author: chosenUsername, message });
+    socket.emit("createdMessage", { author: user, message });
     setMessages((currentMsg) => [
       ...currentMsg,
-      { author: chosenUsername, message },
+      { author: user, message },
     ]);
     setMessage("");
   };
@@ -52,9 +66,9 @@ export default function Home() {
   };
 
   return (
-    <div className="flex items-center p-4 mx-auto min-h-screen justify-center bg-purple-500">
+    <div className='flex items-center p-4 mx-auto min-h-screen justify-center' style={{backgroundColor: color}}>
       <main className="gap-4 flex flex-col items-center justify-center w-full h-full">
-        {!chosenUsername ? (
+        {!user ? (
           <>
             <h3 className="font-bold text-white text-xl">
               How people should call you?
@@ -68,7 +82,7 @@ export default function Home() {
             />
             <button
               onClick={() => {
-                setChosenUsername(username);
+                setUser({ name: username, color });
               }}
               className="bg-white rounded-md px-4 py-2 text-xl"
             >
@@ -80,15 +94,16 @@ export default function Home() {
             <p className="font-bold text-white text-xl">
               Your username: {username}
             </p>
-            <div className="flex flex-col justify-end bg-white h-[20rem] min-w-[33%] rounded-md shadow-md ">
+            <div className="flex flex-col justify-end bg-white h-[40rem] w-95vw min-w-[95%] rounded-md shadow-md ">
               <div className="h-full last:border-b-0 overflow-y-scroll">
                 {messages.map((msg, i) => {
                   return (
                     <div
                       className="w-full py-1 px-2 border-b border-gray-200"
+                      style = {{backgroundColor: msg.author.color, opacity: ".8"}}
                       key={i}
-                    >
-                      {msg.author} : {msg.message}
+                    > 
+                    {msg.author.name} : {msg.message}
                     </div>
                   );
                 })}
@@ -120,3 +135,4 @@ export default function Home() {
     </div>
   );
 }
+
