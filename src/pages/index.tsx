@@ -1,12 +1,8 @@
 import io from "socket.io-client";
 import { useState, useEffect } from "react";
+import { User } from "../utils/userHandler"
 
 let socket;
-
-type User = {
-  name: string,
-  color: string
-}
 
 type Message = {
   author: User;
@@ -21,13 +17,32 @@ export default function Home() {
   const [messages, setMessages] = useState<Array<Message>>([]);
 
   useEffect(() => {
-    socketInitializer();
-    colorIntializer();
+    userInitializer();
   }, []);
+
+  const userInitializer = async() => {
+    if (user === undefined) {
+      const response = await fetch('/api/user');
+      const data = await response.json();
+      if (data.user) {
+        setUser(data.user);
+        setColor(data.user.color);
+        socketInitializer();
+      } else {
+        colorIntializer();
+      }
+    }
+  }
 
   const socketInitializer = async () => {
     // We just call it because we don't need anything else out of it
-    await fetch("/api/socket");
+    await fetch("/api/socket", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(user)
+    })
 
     socket = io();
 
@@ -71,7 +86,7 @@ export default function Home() {
         {!user ? (
           <>
             <h3 className="font-bold text-white text-xl">
-              How people should call you?
+              What should we call you?
             </h3>
             <input
               type="text"
@@ -83,6 +98,7 @@ export default function Home() {
             <button
               onClick={() => {
                 setUser({ name: username, color });
+                socketInitializer();
               }}
               className="bg-white rounded-md px-4 py-2 text-xl"
             >

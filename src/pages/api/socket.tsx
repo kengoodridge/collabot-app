@@ -1,5 +1,6 @@
 import { Server } from "socket.io";
 import messageHandler from "../../utils/sockets/messageHandler";
+import { setUser } from "../../utils/userHandler"
 
 export default function SocketHandler(req, res) {
   // It means that socket server was already initialised
@@ -9,6 +10,8 @@ export default function SocketHandler(req, res) {
     return;
   }
 
+  const user = req.body;
+  setUser(req.cookies.session, user);
   const io = new Server(res.socket.server);
   res.socket.server.io = io;
 
